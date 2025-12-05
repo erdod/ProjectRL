@@ -1,0 +1,92 @@
+================================================================================
+          RIASSUNTO TEORICO: HIERARCHICAL REINFORCEMENT LEARNING (HRL)
+                           PROGETTO TAXI-V3
+================================================================================
+
+1. ARCHITETTURA DEL SISTEMA (Gerarchia a due livelli)
+--------------------------------------------------------------------------------
+Il progetto implementa un agente basato sul "Framework delle Opzioni" (Sutton,
+Precup, Singh). L'intelligenza è divisa in due livelli distinti per gestire
+l'astrazione temporale.
+
+A. IL META-CONTROLLER (MANAGER - Livello Alto)
+   - Ruolo: Decisore strategico. Non sceglie le azioni motorie, ma le intenzioni
+     (es. "Vai a Red", "Prendi Passeggero").
+   - Dinamica Temporale: Opera in un dominio Semi-Markoviano (SMDP). Le sue
+     decisioni non durano 1 step, ma 'k' steps (tempo variabile).
+   - Riferimento Codice:
+     * Struttura dati: self.Q_meta (Matrice Stati x Opzioni).
+     * Decisione: Funzione get_meta_action().
+     * Obiettivo: Massimizzare la ricompensa reale cumulativa.
+
+B. I CONTROLLER INTRA-OPZIONE (WORKERS - Livello Basso)
+   - Ruolo: Esecutori specializzati. Sanno come navigare nello spazio fisico per
+     raggiungere un sub-goal specifico.
+   - Dinamica Temporale: Operano passo dopo passo (MDP standard).
+   - Riferimento Codice:
+     * Struttura dati: self.Q_options (Matrice Opzioni x Stati x Azioni).
+     * Decisione: Funzione get_primitive_action().
+     * Obiettivo: Massimizzare la ricompensa intrinseca (velocità e precisione).
+
+C. TERMINAZIONE E DISCOVERY (Il "Collo di Bottiglia")
+   - Concetto: Un'opzione è definita da una condizione di fine (Beta).
+   - Riferimento Codice: Funzione check_option_termination().
+   - Applicazione: Abbiamo definito manualmente gli stati critici (Passeggero preso,
+     Destinazione raggiunta) per guidare la scoperta della struttura del problema.
+
+
+2. LE FORMULE MATEMATICHE E LA LORO TRADUZIONE IN CODICE
+--------------------------------------------------------------------------------
+
+A. FORMULA Q-LEARNING STANDARD (Livello Basso / Worker)
+   Usata per aggiornare la conoscenza di navigazione passo dopo passo.
+
+   Formula:
+   Q(s,a) <- Q(s,a) + alpha * [ r_int + gamma * max_a' Q(s',a') - Q(s,a) ]
+
+   Nel codice (funzione 'execute_option'):
+   * Q(s,a)      -> self.Q_options[option_idx, state, action]
+   * alpha       -> self.alpha (Learning Rate)
+   * r_int       -> r_worker (Reward intrinseco: +10/+50 per successo, -0.1 per step)
+   * gamma       -> self.gamma
+   * max_a'      -> np.argmax(self.Q_options[option_idx, next_state, :])
+
+B. FORMULA SMDP Q-LEARNING (Livello Alto / Manager)
+   Usata per aggiornare la strategia globale. La differenza cruciale è il termine
+   di sconto temporale elevato alla potenza 'k' (durata dell'azione).
+
+   Formula:
+   Q(s,o) <- Q(s,o) + alpha * [ R_ext + (gamma^k) * max_o' Q(s',o') - Q(s,o) ]
+
+   Nel codice (funzione 'train_episode'):
+   * Q(s,o)      -> self.Q_meta[state, option_idx]
+   * R_ext       -> reward_from_env (Somma cumulativa delle reward reali durante l'opzione)
+   * gamma^k     -> self.gamma ** steps (Sconto esponenziale basato sulla durata)
+   * max_o'      -> np.argmax(self.Q_meta[next_state, :])
+
+
+3. CLASSIFICAZIONE METODOLOGICA (Che tipo di AI è?)
+--------------------------------------------------------------------------------
+
+1. TABULAR RL (Non Deep)
+   - Non usa reti neurali. Usa tabelle di ricerca (Lookup Tables) implementate
+     con matrici NumPy. Adatto perché lo spazio degli stati è discreto e piccolo (500).
+
+2. MODEL-FREE
+   - L'agente non possiede una mappa o un modello fisico del mondo (Matrice di
+     Transizione P). Impara esplorando (Trial and Error).
+
+3. OFF-POLICY (Q-Learning)
+   - L'agente impara il valore della politica "ottimale" (Greedy) mentre si
+     comporta in modo esplorativo (Epsilon-Greedy).
+
+4. SMDP (Semi-Markov Decision Process)
+   - Estensione degli MDP per gestire azioni che durano intervalli di tempo
+     variabili. Fondamentale per il livello gerarchico.
+
+5. REWARD SHAPING & SUBGOAL DISCOVERY
+   - Abbiamo modificato la funzione di ricompensa interna (+50 per Pickup) per
+     aiutare l'agente a scoprire i colli di bottiglia logici del problema,
+     accelerando l'apprendimento rispetto a un reward sparso.
+
+================================================================================
