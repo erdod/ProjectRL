@@ -1,5 +1,5 @@
 import numpy as np
-import gym
+import gymnasium as gym
 import time
 import matplotlib.pyplot as plt
 #<---------------------------------------------Q-LEARNING ALGO START --------------------------------------------->

@@ -1,165 +1,201 @@
 import numpy as np
-from config import env, alpha, gamma, epsilon, max_episode_length, N, rng
-from agent import choose_action
+import gymnasium as gym
+# Importiamo l'ambiente e i dizionari dei parametri
+from config import env, max_episode_length, rng, params_q, params_sarsa, params_mc
 
+# --- Helper Function ---
+def get_valid_action(state, env):
+    """
+    Funzione di aiuto per gestire action_mask su Gymnasium.
+    Utile per Monte Carlo per evitare troppe azioni illegali all'inizio.
+    """
+    try:
+        action_mask_fn = env.get_wrapper_attr('action_mask')
+        mask = action_mask_fn(state)
+        return env.action_space.sample(mask)
+    except AttributeError:
+        return env.action_space.sample()
+
+# --- Q-LEARNING ---
 def train_q_learning():
-    """
-    Trains the agent using the Q-Learning algorithm.
-    """
     print("Q-Learning Started")
+    
+    # Unpacking dei parametri dal config
+    N = params_q["N"]
+    alpha = params_q["alpha"]
+    gamma = params_q["gamma"]
+    epsilon = params_q["epsilon"]
+    min_epsilon = params_q["min_epsilon"]
+    decay_rate = params_q["decay"]
+
     q_table = np.zeros([env.observation_space.n, env.action_space.n])
     rewards_arr = []
     num_episodes_arr = []
     
-    lst = list(range(1, N + 1))
-    for i in lst:
+    for i in range(1, N + 1):
         rewards = []
         state, info = env.reset()
         done = False
         lgt = 0
+        
         while not done:
             if lgt > max_episode_length:
                 break
+            
+            # Epsilon-Greedy
             if rng.random() < epsilon:
                 action = env.action_space.sample()
             else:
                 action = np.argmax(q_table[state])
             
-            next_state, reward, done, flag, info = env.step(action)
+            next_state, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+
+            # Update
             current_value = q_table[state, action]
             next_max = np.max(q_table[next_state])
-            rewards.append(reward)
             q_table[state, action] = (1 - alpha) * current_value + alpha * (reward + gamma * next_max)
+            
+            rewards.append(reward)
             state = next_state
             lgt += 1
         
-        rewards_arr.append(sum(rewards) / len(rewards))
+        # Decay
+        epsilon = max(min_epsilon, epsilon * np.exp(-decay_rate))
+        
+        if len(rewards) > 0:
+            rewards_arr.append(sum(rewards) / len(rewards))
+        else:
+            rewards_arr.append(0)
         num_episodes_arr.append(lgt)
 
-    print("Q-Table for Q-Learning: ")
-    print(q_table)
-    print("Average Reward for Q-Learning Algorithm: ", np.mean(rewards_arr))
+    print(f"Q-Learning Avg Reward (last 100): {np.mean(rewards_arr[-100:]):.2f}")
     print("Q-Learning Ended")
     return rewards_arr, num_episodes_arr
 
+# --- SARSA ---
 def train_sarsa():
-    """
-    Trains the agent using the SARSA algorithm.
-    """
     print("SARSA Started")
+    
+    # Unpacking parametri
+    N = params_sarsa["N"]
+    alpha = params_sarsa["alpha"]
+    gamma = params_sarsa["gamma"]
+    epsilon = params_sarsa["epsilon"]
+    min_epsilon = params_sarsa["min_epsilon"]
+    decay_rate = params_sarsa["decay"]
+
     q_table = np.zeros([env.observation_space.n, env.action_space.n])
     rewards_arr = []
     num_episodes_arr = []
     
-    lst = list(range(1, N + 1))
-    for i in lst:
+    for i in range(1, N + 1):
         state, info = env.reset()
         rewards = []
         done = False
         lgt = 0
-        action = choose_action(state, q_table)
+        
+        # Prima azione
+        if rng.random() < epsilon:
+            action = env.action_space.sample()
+        else:
+            action = np.argmax(q_table[state])
+        
         while not done:
-            next_state, reward, done, flag, info = env.step(action)
-            current_value = q_table[state, action]
-            next_action = choose_action(next_state, q_table)
-            next_val = q_table[next_state, next_action]
-            rewards.append(reward)
-            q_table[state, action] = (1 - alpha) * current_value + alpha * (reward + gamma * next_val)
-            state = next_state
-            action = next_action
             if lgt > max_episode_length:
                 break
+
+            next_state, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+            
+            # Prossima azione (On-Policy)
+            if rng.random() < epsilon:
+                next_action = env.action_space.sample()
+            else:
+                next_action = np.argmax(q_table[next_state])
+            
+            # Update
+            current_value = q_table[state, action]
+            next_val = q_table[next_state, next_action]
+            q_table[state, action] = (1 - alpha) * current_value + alpha * (reward + gamma * next_val)
+            
+            rewards.append(reward)
+            state = next_state
+            action = next_action
             lgt += 1
+            
+        epsilon = max(min_epsilon, epsilon * np.exp(-decay_rate))
         
-        rewards_arr.append(sum(rewards) / len(rewards))
+        if len(rewards) > 0:
+            rewards_arr.append(sum(rewards) / len(rewards))
+        else:
+            rewards_arr.append(0)
         num_episodes_arr.append(lgt)
 
-    print("Q-Table for SARSA: ")
-    print(q_table)
-    print("Average Reward for SARSA: ", np.mean(rewards_arr))
+    print(f"SARSA Avg Reward (last 100): {np.mean(rewards_arr[-100:]):.2f}")
     print("SARSA ended")
     return rewards_arr, num_episodes_arr
 
+# --- MONTE CARLO ---
 def train_mc():
-    """
-    Trains the agent using the Monte Carlo Every-Visit algorithm.
-    """
     print("MC Started")
-    v_table = np.zeros([env.observation_space.n])
-    policy = dict()
-    returns = dict()
-    for i in range(0, 500):
-        policy[i] = env.action_space.sample(env.action_mask(i))
-        returns[i] = []
+    
+    # Unpacking parametri
+    N = params_mc["N"]
+    gamma = params_mc["gamma"]
+    epsilon = params_mc["epsilon"]
+    min_epsilon = params_mc["min_epsilon"]
+    decay_rate = params_mc["decay"]
+
+    q_table = np.zeros([env.observation_space.n, env.action_space.n])
+    returns_sum = np.zeros([env.observation_space.n, env.action_space.n])
+    returns_count = np.zeros([env.observation_space.n, env.action_space.n])
 
     rewards_arr = []
     num_episodes_arr = []
     
-    # In the original code, N for MC is 1000, not 10000
-    mc_n = 1000
-    lst = list(range(1, mc_n + 1))
-    
-    for k in lst:
-        lgt = 0
-        done = False
+    for k in range(1, N + 1):
         state, info = env.reset()
-        episode = [state]
-        episodeReward = [0]
-        rnd = False
+        episode = [] 
+        done = False
+        lgt = 0
+        
         while not done:
-            if k == 1 or rnd:
-                action = env.action_space.sample(env.action_mask(state))
-            else:
-                action = policy[state]
-            
-            next_state, reward, done, flag, info = env.step(action)
-            if done:
-                break
-            episode.append(next_state)
-            episodeReward.append(reward)
-            state = next_state
-            if state == next_state:
-                rnd = True
-            else:
-                rnd = False
             if lgt > max_episode_length:
                 break
+            
+            # Scelta azione
+            if rng.random() < epsilon:
+                action = get_valid_action(state, env)
+            else:
+                action = np.argmax(q_table[state])
+            
+            next_state, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+            
+            episode.append((state, action, reward))
+            state = next_state
             lgt += 1
         
+        epsilon = max(min_epsilon, epsilon * np.exp(-decay_rate))
         num_episodes_arr.append(lgt)
-
-        G = 0
-        for i in range(len(episode)):
-            G = episodeReward[i] + gamma * G
-            returns[episode[i]].append(G)
-            tmp = v_table[episode[i]]
-            v_table[episode[i]] = sum(returns[episode[i]]) / len(returns[episode[i]])
-
-        for z in range(0, 500):
-            a = policy[z]
-            max_value = -float('inf')
-            max_action = None
-            for action in range(6):
-                # The original logic for policy improvement seems to have a bug where it doesn't use the environment correctly.
-                # Replicating original behavior.
-                # A proper implementation would likely involve creating a copy of the env or resetting to the state `z`.
-                # For now, this just uses the last `next_state` from the episode generation.
-                next_state_pi, reward_pi, _, _, _ = env.step(action)
-                tmp = reward_pi
-                if tmp > max_value:
-                    max_value = tmp
-                    max_action = action
-            policy[z] = max_action
         
-        # Avoid division by zero if episodeReward is empty
-        if len(episodeReward) > 0:
-            rewards_arr.append(sum(episodeReward) / len(episodeReward))
+        ep_rewards = [x[2] for x in episode]
+        if len(ep_rewards) > 0:
+            rewards_arr.append(sum(ep_rewards) / len(ep_rewards))
         else:
             rewards_arr.append(0)
 
+        # Update Q-Table (Every-Visit)
+        G = 0
+        for t in range(len(episode) - 1, -1, -1):
+            s_t, a_t, r_t = episode[t]
+            G = gamma * G + r_t
+            
+            returns_count[s_t, a_t] += 1
+            returns_sum[s_t, a_t] += G
+            q_table[s_t, a_t] = returns_sum[s_t, a_t] / returns_count[s_t, a_t]
 
-    print("V(s): ")
-    print(v_table)
-    print("Average Reward for MC Every-Visit: ", np.mean(rewards_arr))
+    print(f"MC Avg Reward (last 100): {np.mean(rewards_arr[-100:]):.2f}")
     print("MC Ended")
     return rewards_arr, num_episodes_arr
