@@ -1,34 +1,54 @@
+import sys
 from train import train_q_learning, train_sarsa, train_mc
-from utils import plot_results
-# RIMOSSO: from config import N  <-- Questo causava l'errore perché N non esiste più lì.
+from utils import save_plots
 
 def main():
-    """
-    Main function to run the reinforcement learning algorithms and plot the results.
-    """
-    # 1. Eseguiamo i training.
-    # I parametri (episodi, alpha, ecc.) sono ora presi automaticamente da config.py dentro queste funzioni.
-    q_rewards, q_lengths = train_q_learning()
-    sarsa_rewards, sarsa_lengths = train_sarsa()
-    mc_rewards, mc_lengths = train_mc()
+    print("-----------------------------------------")
+    print("   TAXI-V3 REINFORCEMENT LEARNING MENU   ")
+    print("-----------------------------------------")
+    print("1. Esegui Q-Learning")
+    print("2. Esegui SARSA")
+    print("3. Esegui Monte Carlo (MC)")
+    print("4. Esegui TUTTI e crea confronto")
+    print("0. Esci")
     
-    # 2. Gestione del Plotting
-    # Dato che ora gli algoritmi hanno lunghezze diverse (es. Q=5000, SARSA=10000, MC=20000),
-    # dobbiamo decidere come passarli alla funzione di plot.
-    
-    # Calcoliamo la lunghezza minima per evitare errori di indice se la funzione plot non gestisce lunghezze variabili
-    min_length = min(len(q_rewards), len(sarsa_rewards), len(mc_rewards))
-    
-    print(f"\n--- Risultati pronti per il grafico ---")
-    print(f"Episodi Q-Learning: {len(q_rewards)}")
-    print(f"Episodi SARSA: {len(sarsa_rewards)}")
-    print(f"Episodi MC: {len(mc_rewards)}")
-    print(f"Plotting troncato ai primi {min_length} episodi per confronto diretto...")
+    choice = input("\nSeleziona un'opzione (0-4): ")
 
-    # Passiamo i dati alla funzione di plot.
-    # Nota: Stiamo passando 'min_length' come parametro N. 
-    # Assicurati che plot_results in utils.py usi questo numero per tagliare le array o settare l'asse X.
-    plot_results(q_rewards, q_lengths, sarsa_rewards, sarsa_lengths, mc_rewards, mc_lengths, min_length)
+    if choice == '1':
+        # Solo Q-Learning
+        q_rewards, q_lengths = train_q_learning()
+        save_plots(q_data=(q_rewards, q_lengths))
+        
+    elif choice == '2':
+        # Solo SARSA
+        s_rewards, s_lengths = train_sarsa()
+        save_plots(sarsa_data=(s_rewards, s_lengths))
+
+    elif choice == '3':
+        # Solo MC
+        m_rewards, m_lengths = train_mc()
+        save_plots(mc_data=(m_rewards, m_lengths))
+
+    elif choice == '4':
+        # Tutti
+        print("\nAvvio esecuzione completa...")
+        q_rewards, q_lengths = train_q_learning()
+        s_rewards, s_lengths = train_sarsa()
+        m_rewards, m_lengths = train_mc()
+        
+        # Passiamo tutto a save_plots
+        save_plots(
+            q_data=(q_rewards, q_lengths), 
+            sarsa_data=(s_rewards, s_lengths), 
+            mc_data=(m_rewards, m_lengths)
+        )
+
+    elif choice == '0':
+        print("Uscita.")
+        sys.exit()
+    
+    else:
+        print("Scelta non valida.")
 
 if __name__ == "__main__":
     main()
