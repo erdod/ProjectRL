@@ -13,7 +13,7 @@ def execution_view(agent):
     agent.env = env
     
     print("\n" + "="*60)
-    print("🎥 STARTING EXECUTION VIEW (Graph Analysis)")
+    print("STARTING EXECUTION VIEW (Graph Analysis)")
     print("="*60)
     
     state, _ = env.reset(seed=42) 
@@ -38,11 +38,11 @@ def execution_view(agent):
         r_new, c_new, p_new, d_new = env.unwrapped.decode(next_state)
         p_new_str = ["R", "G", "B", "Y", "Taxi"][p_new]
         
-        print(f"\n⬇️ MACRO STEP {macro_step}: [{opt_name}]")
+        print(f"\n MACRO STEP {macro_step}: [{opt_name}]")
         print(f"   Executed in {steps} steps -> Taxi({r_new},{c_new}), Pass: {p_new_str}")
         
         if p_new != p:
-            print(f"   ✨ PASSENGER STATE CHANGED!")
+            print(f"PASSENGER STATE CHANGED!")
             p = p_new
         
         state = next_state
@@ -50,9 +50,9 @@ def execution_view(agent):
         
     print("-" * 60)
     if agent.r_sum > 0:
-        print(f"🏆 SUCCESS! Final Reward: {agent.r_sum}")
+        print(f" SUCCESS! Final Reward: {agent.r_sum}")
     else:
-        print(f"⚠️ FAILURE. Final Reward: {agent.r_sum}")
+        print(f" FAILURE. Final Reward: {agent.r_sum}")
     
     env.close()
 
@@ -65,7 +65,7 @@ def test(agent, episodes=100):
     env = gym.make(config.ENV_NAME) 
     agent.env = env
     
-    print(f"\n📊 STARTING STATISTICAL TEST ON {episodes} EPISODES...")
+    print(f"\n STARTING STATISTICAL TEST ON {episodes} EPISODES...")
     
     success_count = 0
     rewards_list = []
@@ -100,12 +100,12 @@ def test(agent, episodes=100):
     success_rate = (success_count / episodes) * 100
     
     print("-" * 40)
-    print(f"📈 RESULTS:")
+    print(f" RESULTS:")
     print(f"   Success Rate: {success_rate:.1f}%")
     print(f"   Avg Reward:   {avg_rew:.2f}")
     print(f"   Avg Steps:    {avg_steps:.2f}")
     print("-" * 40)
     
     # Generate Test Graphs
-    print("📊 Generating Test Graphs...")
+    print(" Generating Test Graphs...")
     plot_test_metrics(rewards_list, steps_list, success_count, episodes)

@@ -1,0 +1,26 @@
+1. Q-Learning e SARSA (Success Rate: 100%) -> Eccellenti
+Entrambi gli algoritmi hanno risolto completamente l'ambiente, raggiungendo un tasso di successo del 100% nei test.
+
+Q-Learning (Avg Reward Training: 0.62): Ha imparato velocemente la policy ottimale. Essendo un algoritmo off-policy, cerca sempre la ricompensa massima futura indipendentemente dalla sua attuale politica di esplorazione. Questo lo rende molto "aggressivo" ed efficiente in ambienti deterministici come questo.
+
+SARSA (Avg Reward Training: 0.68): Ha ottenuto un reward medio leggermente superiore durante il training.
+
+Motivazione: SARSA è on-policy, il che significa che "impara ciò che fa", inclusa l'esplorazione. Poiché il tuo epsilon decadeva lentamente, SARSA è stato più prudente ("cauto") rispetto a Q-Learning per evitare penalità (muri, azioni illegali) durante l'addestramento. Questo spesso porta a un reward medio più alto nella fase finale del training quando l'epsilon è basso, perché la policy è più robusta.
+
+2. Monte Carlo (Success Rate: 27%) -> Insufficiente
+Il risultato di Monte Carlo è nettamente inferiore, con solo il 27% di episodi completati con successo e un reward medio negativo (-0.50).
+
+Motivo principale: Mancanza di Bootstrapping. Q-Learning e SARSA usano il bootstrapping: aggiornano la loro stima basandosi su un'altra stima (il passo successivo). Imparano passo dopo passo. Monte Carlo, invece, deve attendere la fine dell'episodio per imparare. Se l'episodio non finisce (o finisce per timeout/troncamento), l'agente riceve un segnale molto "rumoroso" o nullo.
+
+Il problema della "Sparsity": In Taxi-v3, azzeccare la sequenza giusta per caso (esplorazione random) è difficile. L'agente MC passa la maggior parte del tempo a girare a vuoto, accumulando reward negativi (-1 per passo). Quando finalmente trova l'obiettivo, il reward positivo (+20) è spesso sepolto da centinaia di passi negativi, rendendo difficile capire quale azione specifica fosse quella giusta.
+
+Conclusione: MC richiede ordini di grandezza più dati (milioni di episodi, non 10.000) per convergere in questo tipo di ambiente rispetto ai metodi TD (Temporal Difference) come Q-Learning.
+
+Sintesi per il confronto
+Nel confronto finale con l'HRL (Hierarchical Reinforcement Learning), potrai affermare che:
+
+Q-Learning e SARSA sono molto efficaci per problemi "piatti" (senza gerarchia) di questa dimensione.
+
+Monte Carlo fallisce perché non sfrutta la struttura passo-passo del problema.
+
+L'HRL (se funziona bene) dovrebbe mostrare vantaggi non tanto nella risoluzione finale (visto che Q-Learning fa già 100%), ma potenzialmente nella velocità di apprendimento iniziale o nella capacità di gestire compiti più complessi dove la sequenza di azioni è più lunga.
