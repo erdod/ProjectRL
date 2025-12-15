@@ -1,18 +1,21 @@
 import sys
-from train import train_q_learning, train_sarsa, train_mc, evaluate_agent
-from utils import save_plots, plot_test_metrics
+import os
 from config import test_episodes
+from utils import save_plots, plot_test_metrics
+
+from q_learning import train_q_learning
+from sarsa import train_sarsa
+from monte_carlo import train_mc
+from agent import evaluate_agent, save_model
 
 def run_evaluation_and_plot(q_table, name):
-    """
-    Helper function to run test episodes and plot test metrics immediately.
-    """
+    """Esegue il test e plotta subito i risultati"""
     rewards, steps, success = evaluate_agent(q_table, test_episodes, name=name)
     plot_test_metrics(rewards, steps, success, test_episodes, filename_prefix=name)
 
 def main():
     print("-----------------------------------------")
-    print("   TAXI-V3 REINFORCEMENT LEARNING MENU   ")
+    print("   TAXI-V3 RL MODULAR FRAMEWORK          ")
     print("-----------------------------------------")
     print("1. Run Q-Learning")
     print("2. Run SARSA")
@@ -23,48 +26,36 @@ def main():
     choice = input("\nSelect an option (0-4): ")
 
     if choice == '1':
-        # Q-Learning
-        q_rewards, q_lengths, q_table = train_q_learning()
-        save_plots(q_data=(q_rewards, q_lengths))
-        run_evaluation_and_plot(q_table, "Q-Learning")
+        rewards, lengths, table = train_q_learning()
+        save_plots(q_data=(rewards, lengths))
+        run_evaluation_and_plot(table, "Q-Learning")
         
     elif choice == '2':
-        # SARSA
-        s_rewards, s_lengths, s_table = train_sarsa()
-        save_plots(sarsa_data=(s_rewards, s_lengths))
-        run_evaluation_and_plot(s_table, "SARSA")
+        rewards, lengths, table = train_sarsa()
+        save_plots(sarsa_data=(rewards, lengths))
+        run_evaluation_and_plot(table, "SARSA")
 
     elif choice == '3':
-        # MC
-        m_rewards, m_lengths, m_table = train_mc()
-        save_plots(mc_data=(m_rewards, m_lengths))
-        run_evaluation_and_plot(m_table, "Monte_Carlo")
+        rewards, lengths, table = train_mc()
+        save_plots(mc_data=(rewards, lengths))
+        run_evaluation_and_plot(table, "Monte_Carlo")
 
     elif choice == '4':
-        # Run All
-        print("\nStarting full execution...")
-        
-        # Train and Test Q-Learning
-        q_rewards, q_lengths, q_table = train_q_learning()
-        run_evaluation_and_plot(q_table, "Q-Learning")
-        
-        # Train and Test SARSA
-        s_rewards, s_lengths, s_table = train_sarsa()
-        run_evaluation_and_plot(s_table, "SARSA")
-        
-        # Train and Test MC
-        m_rewards, m_lengths, m_table = train_mc()
-        run_evaluation_and_plot(m_table, "Monte_Carlo")
-        
-        # Save Comparison Training Plots
+        print("\n--- Training ALL Algorithms ---")
+        q_rew, q_len, q_tab = train_q_learning()
+        run_evaluation_and_plot(q_tab, "Q-Learning")
+        s_rew, s_len, s_tab = train_sarsa()
+        run_evaluation_and_plot(s_tab, "SARSA")
+        m_rew, m_len, m_tab = train_mc()
+        run_evaluation_and_plot(m_tab, "Monte_Carlo")
+        print("\nGenerating Comparison Plots...")
         save_plots(
-            q_data=(q_rewards, q_lengths), 
-            sarsa_data=(s_rewards, s_lengths), 
-            mc_data=(m_rewards, m_lengths)
+            q_data=(q_rew, q_len), 
+            sarsa_data=(s_rew, s_len), 
+            mc_data=(m_rew, m_len)
         )
 
     elif choice == '0':
-        print("Exiting.")
         sys.exit()
     
     else:

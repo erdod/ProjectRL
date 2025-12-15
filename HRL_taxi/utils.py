@@ -1,4 +1,3 @@
-# utils.py
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -8,8 +7,6 @@ def plot_training_metrics(rewards, steps, epsilons, filename_prefix="train"):
     Plots comprehensive training metrics: Rewards, Steps, and Epsilon.
     """
     sns.set(style='darkgrid', font_scale=1.2)
-    
-    # 1. Learning Curve (Rewards)
     plt.figure(figsize=(12, 6))
     window = 100
     if len(rewards) >= window:
@@ -26,7 +23,6 @@ def plot_training_metrics(rewards, steps, epsilons, filename_prefix="train"):
     plt.savefig(f"{filename_prefix}_learning_curve.png")
     plt.close()
 
-    # 2. Efficiency Curve (Steps per Episode)
     plt.figure(figsize=(12, 6))
     if len(steps) >= window:
         moving_avg_steps = np.convolve(steps, np.ones(window)/window, mode='valid')
@@ -41,7 +37,6 @@ def plot_training_metrics(rewards, steps, epsilons, filename_prefix="train"):
     plt.savefig(f"{filename_prefix}_steps_curve.png")
     plt.close()
     
-    # 3. Epsilon Decay
     plt.figure(figsize=(10, 5))
     plt.plot(epsilons, color='orange', linewidth=2)
     plt.title('Training: Epsilon Decay over Time')
@@ -58,7 +53,6 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
     """
     sns.set(style='whitegrid', font_scale=1.2)
     
-    # 1. Reward Distribution (Histogram)
     plt.figure(figsize=(10, 6))
     sns.histplot(rewards, kde=True, color='purple', bins=20)
     plt.title('Test: Reward Distribution (Consistency Check)')
@@ -67,7 +61,6 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
     plt.savefig(f"{filename_prefix}_reward_dist.png")
     plt.close()
 
-    # 2. Steps Distribution (Efficiency Check)
     plt.figure(figsize=(10, 6))
     sns.histplot(steps, kde=True, color='teal', bins=20)
     plt.title('Test: Steps Distribution')
@@ -75,8 +68,7 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
     plt.ylabel('Frequency')
     plt.savefig(f"{filename_prefix}_steps_dist.png")
     plt.close()
-    
-    # 3. Success Rate (Pie Chart)
+
     labels = ['Success', 'Failure']
     sizes = [success_count, total_episodes - success_count]
     colors = ['#66b3ff', '#ff9999']

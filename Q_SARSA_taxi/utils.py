@@ -11,8 +11,6 @@ def plot_training_metrics(rewards, steps, epsilons=None, filename_prefix="train"
         os.makedirs(output_dir)
 
     sns.set(style='darkgrid', font_scale=1.2)
-    
-    # 1. Learning Curve (Rewards)
     plt.figure(figsize=(12, 6))
     window = 100
     if len(rewards) >= window:
@@ -29,7 +27,6 @@ def plot_training_metrics(rewards, steps, epsilons=None, filename_prefix="train"
     plt.savefig(os.path.join(output_dir, f"{filename_prefix}_learning_curve.png"))
     plt.close()
 
-    # 2. Efficiency Curve (Steps per Episode)
     plt.figure(figsize=(12, 6))
     if len(steps) >= window:
         moving_avg_steps = np.convolve(steps, np.ones(window)/window, mode='valid')
@@ -45,7 +42,6 @@ def plot_training_metrics(rewards, steps, epsilons=None, filename_prefix="train"
     plt.savefig(os.path.join(output_dir, f"{filename_prefix}_steps_curve.png"))
     plt.close()
     
-    # 3. Epsilon Decay
     if epsilons is not None and len(epsilons) > 0:
         plt.figure(figsize=(10, 5))
         plt.plot(epsilons, color='orange', linewidth=2)
@@ -67,7 +63,6 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
 
     sns.set(style='whitegrid', font_scale=1.2)
     
-    # 1. Reward Distribution (Histogram)
     plt.figure(figsize=(10, 6))
     sns.histplot(rewards, kde=True, color='purple', bins=20)
     plt.title(f'{filename_prefix} Test: Reward Distribution')
@@ -76,7 +71,6 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
     plt.savefig(os.path.join(output_dir, f"{filename_prefix}_test_reward_dist.png"))
     plt.close()
 
-    # 2. Steps Distribution (Efficiency Check)
     plt.figure(figsize=(10, 6))
     sns.histplot(steps, kde=True, color='teal', bins=20)
     plt.title(f'{filename_prefix} Test: Steps Distribution')
@@ -85,7 +79,6 @@ def plot_test_metrics(rewards, steps, success_count, total_episodes, filename_pr
     plt.savefig(os.path.join(output_dir, f"{filename_prefix}_test_steps_dist.png"))
     plt.close()
     
-    # 3. Success Rate (Pie Chart)
     labels = ['Success', 'Failure']
     sizes = [success_count, total_episodes - success_count]
     colors = ['#66b3ff', '#ff9999']
@@ -109,7 +102,6 @@ def save_plots(q_data=None, sarsa_data=None, mc_data=None):
 
     print(f"Saving training plots to '{output_dir}'...")
 
-    # --- 1. Individual Plots ---
     if q_data is not None:
         rewards, lengths = q_data
         plot_training_metrics(rewards, lengths, filename_prefix="Q-Learning", output_dir=output_dir)
@@ -122,7 +114,6 @@ def save_plots(q_data=None, sarsa_data=None, mc_data=None):
         rewards, lengths = mc_data
         plot_training_metrics(rewards, lengths, filename_prefix="Monte_Carlo", output_dir=output_dir)
 
-    # --- 2. Comparison Plots ---
     if q_data is not None and sarsa_data is not None and mc_data is not None:
         sns.set(style='darkgrid', font_scale=1.2)
         
@@ -133,7 +124,6 @@ def save_plots(q_data=None, sarsa_data=None, mc_data=None):
             if len(data) < w: return data
             return np.convolve(data, np.ones(w)/w, mode='valid')
 
-        # COMPARISON: REWARDS
         plt.figure(figsize=(12, 6))
         q_avg = get_moving_avg(q_data[0][:min_len], window)
         s_avg = get_moving_avg(sarsa_data[0][:min_len], window)
@@ -150,7 +140,6 @@ def save_plots(q_data=None, sarsa_data=None, mc_data=None):
         plt.savefig(os.path.join(output_dir, "comparison_rewards.png"))
         plt.close()
 
-        # COMPARISON: STEPS
         plt.figure(figsize=(12, 6))
         q_steps_avg = get_moving_avg(q_data[1][:min_len], window)
         s_steps_avg = get_moving_avg(sarsa_data[1][:min_len], window)

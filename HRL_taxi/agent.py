@@ -1,4 +1,3 @@
-# agent.py
 import numpy as np
 import pickle
 import time
@@ -46,7 +45,6 @@ class RobustDiscoveryAgent:
             return np.random.choice(self.num_options)
         return np.argmax(self.Q_meta[state, :])
 
-    # PARAMETRO VISUALIZE PER RALLENTARE
     def execute_option(self, option_idx, state, is_training=True, visualize=False):
         steps = 0
         cumulative_reward = 0
@@ -55,7 +53,6 @@ class RobustDiscoveryAgent:
         
         while not option_terminated and not self.done:
             
-            # SE E' UN EPISODIO CHIAVE (visualize=True), RALLENTA
             if visualize: time.sleep(0.05) 
             
             action = self.get_primitive_action(state, option_idx, epsilon_worker)

@@ -1,4 +1,3 @@
-# test_functions.py
 import time
 import numpy as np
 import config
@@ -78,7 +77,6 @@ def test(agent, episodes=100):
         total_steps = 0
         
         while not agent.done:
-            # Greedy Action
             option_idx = agent.get_meta_action(state, epsilon=0.0)
             
             next_state, reward, steps = agent.execute_option(option_idx, state, is_training=False, visualize=False)
@@ -105,7 +103,5 @@ def test(agent, episodes=100):
     print(f"   Avg Reward:   {avg_rew:.2f}")
     print(f"   Avg Steps:    {avg_steps:.2f}")
     print("-" * 40)
-    
-    # Generate Test Graphs
     print(" Generating Test Graphs...")
     plot_test_metrics(rewards_list, steps_list, success_count, episodes)
